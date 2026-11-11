@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Controle de Documentos</title>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600&family=Source+Serif+4:wght@600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f2f4f6;--sf:#fff;--ink:#16212b;--mut:#5d6b78;--line:#d9dfe5;--ac:#1f4e5f;--acx:#fff;--red:#b4452c;--grn:#2f6b4f;--amb:#8a6411}
+@media (prefers-color-scheme:dark){:root{--bg:#10171d;--sf:#18222b;--ink:#e8edf1;--mut:#92a0ac;--line:#2c3a46;--ac:#6fb3c8;--acx:#10171d;--red:#e57a62;--grn:#6fc29b;--amb:#d9b45a}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 "Public Sans",system-ui,sans-serif}
+h1,h2{font-family:"Source Serif 4",Georgia,serif;margin:0}
+.wrap{max-width:1100px;margin:0 auto;padding:20px 16px 48px}
+header{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:20px}
+button,input,select,textarea{font:inherit;color:inherit}
+.btn{background:var(--ac);color:var(--acx);border:0;border-radius:6px;padding:9px 16px;font-weight:600;cursor:pointer}
+.btn.sec{background:transparent;color:var(--ink);border:1px solid var(--line)}
+:focus-visible{outline:2px solid var(--ac);outline-offset:2px}
+input,select,textarea{width:100%;background:var(--sf);border:1px solid var(--line);border-radius:6px;padding:8px 10px}
+label{display:block;font-weight:500;font-size:13px;color:var(--mut);margin-bottom:4px}
+.filters{display:grid;grid-template-columns:2fr 1fr 1fr;gap:10px;margin-bottom:14px}
+.sum{display:flex;gap:18px;flex-wrap:wrap;color:var(--mut);margin-bottom:12px;font-size:14px}
+.sum b{color:var(--ink)}
+.tbl{background:var(--sf);border:1px solid var(--line);border-radius:8px;overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:760px}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:13px;color:var(--mut);font-weight:500}
+tr:last-child td{border-bottom:0}
+tbody tr{cursor:pointer}tbody tr:hover{background:var(--bg)}
+.num{font-family:"Source Serif 4",Georgia,serif;font-weight:600;white-space:nowrap}
+.tag{display:inline-block;padding:2px 9px;border-radius:99px;font-size:12.5px;font-weight:600;border:1px solid currentColor}
+.Rascunho{color:var(--mut)}.Enviado{color:var(--ac)}.Respondido,.Arquivado{color:var(--grn)}.Pendente{color:var(--amb)}
+.late{color:var(--red);font-weight:600}
+.empty{padding:36px;text-align:center;color:var(--mut)}
+dialog{border:1px solid var(--line);border-radius:10px;background:var(--sf);color:var(--ink);width:min(560px,94vw);padding:20px}
+dialog::backdrop{background:rgba(0,0,0,.45)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:14px 0}
+.full{grid-column:1/-1}
+.row{display:flex;gap:8px;justify-content:space-between;flex-wrap:wrap}
+.login{max-width:360px;margin:12vh auto;background:var(--sf);border:1px solid var(--line);border-radius:10px;padding:24px}
+.login>*+*{margin-top:12px}
+.msg{color:var(--red);font-size:14px;min-height:20px}
+.hide{display:none!important}
+@media(max-width:600px){.filters,.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div id="login" class="login hide">
+  <h1>Controle de Documentos</h1>
+  <div><label for="em">E-mail</label><input id="em" type="email" autocomplete="username"></div>
+  <div><label for="pw">Senha</label><input id="pw" type="password" autocomplete="current-password"></div>
+  <p class="msg" id="lmsg"></p>
+  <button class="btn" id="enter" style="width:100%">Entrar</button>
+</div>
+
+<div id="app" class="wrap hide">
+  <header>
+    <h1>Controle de Documentos</h1>
+    <div><button class="btn" id="new">Novo documento</button> <button class="btn sec" id="out">Sair</button></div>
+  </header>
+  <div class="filters">
+    <input id="q" placeholder="Buscar por assunto, número ou destinatário" aria-label="Buscar">
+    <select id="ft" aria-label="Filtrar por tipo"><option value="">Todos os tipos</option></select>
+    <select id="fs" aria-label="Filtrar por situação"><option value="">Todas as situações</option></select>
+  </div>
+  <div class="sum" id="sum"></div>
+  <div class="tbl"><table>
+    <thead><tr><th>Número</th><th>Data</th><th>Assunto</th><th>Destinatário</th><th>Prazo</th><th>Situação</th></tr></thead>
+    <tbody id="rows"></tbody>
+  </table><div class="empty hide" id="empty">Nenhum documento encontrado. Clique em “Novo documento” para registrar o primeiro.</div></div>
+</div>
+
+<dialog id="dlg">
+  <h2 id="dt">Novo documento</h2>
+  <div class="grid">
+    <div><label for="f_tipo">Tipo</label><select id="f_tipo"></select></div>
+    <div><label for="f_num">Número (automático)</label><input id="f_num" type="number" min="1"></div>
+    <div><label for="f_data">Data do documento</label><input id="f_data" type="date"></div>
+    <div><label for="f_status">Situação</label><select id="f_status"></select></div>
+    <div class="full"><label for="f_ass">Assunto</label><input id="f_ass"></div>
+    <div><label for="f_rem">Remetente</label><input id="f_rem"></div>
+    <div><label for="f_dest">Destinatário</label><input id="f_dest"></div>
+    <div><label for="f_prazo">Prazo de resposta</label><input id="f_prazo" type="date"></div>
+    <div><label for="f_link">Link do PDF (Drive, etc.)</label><input id="f_link" type="url" placeholder="https://"></div>
+    <div class="full"><label for="f_obs">Observações</label><textarea id="f_obs" rows="3"></textarea></div>
+  </div>
+  <p class="msg" id="fmsg"></p>
+  <div class="row">
+    <button class="btn sec" id="del" style="color:var(--red)">Excluir</button>
+    <span><button class="btn sec" id="cancel">Cancelar</button> <button class="btn" id="save">Salvar documento</button></span>
+  </div>
+</dialog>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script>
+// 1) Cole aqui a URL e a chave "anon" do seu projeto Supabase (Project Settings > API)
+const SUPABASE_URL = "COLE_A_URL_AQUI";
+const SUPABASE_KEY = "COLE_A_CHAVE_ANON_AQUI";
+
+const TIPOS = ["Ofício","Memorando","Parecer","Despacho","Notificação","Requerimento"];
+const STATUS = ["Rascunho","Enviado","Pendente","Respondido","Arquivado"];
+const $ = id => document.getElementById(id);
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+let docs = [], editing = null;
+
+const fill = (el, arr) => arr.forEach(v => el.add(new Option(v, v)));
+fill($("ft"), TIPOS); fill($("fs"), STATUS); fill($("f_tipo"), TIPOS); fill($("f_status"), STATUS);
+
+const fmt = d => d ? d.split("-").reverse().join("/") : "—";
+const esc = s => (s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const label = d => `${d.tipo} nº ${String(d.numero).padStart(3,"0")}/${d.ano}`;
+const hoje = () => new Date().toISOString().slice(0,10);
+const atrasado = d => d.prazo && d.prazo < hoje() && !["Respondido","Arquivado"].includes(d.status);
+
+async function init(){
+  const { data:{ session } } = await sb.auth.getSession();
+  $("login").classList.toggle("hide", !!session);
+  $("app").classList.toggle("hide", !session);
+  if(session) load();
+}
+$("enter").onclick = async () => {
+  const { error } = await sb.auth.signInWithPassword({ email:$("em").value, password:$("pw").value });
+  if(error) $("lmsg").textContent = "E-mail ou senha incorretos."; else init();
+};
+$("out").onclick = async () => { await sb.auth.signOut(); init(); };
+
+async function load(){
+  const { data, error } = await sb.from("documentos").select("*").order("ano",{ascending:false}).order("numero",{ascending:false});
+  if(error){ alert("Não foi possível carregar os documentos."); return; }
+  docs = data; render();
+}
+function render(){
+  const q = $("q").value.toLowerCase(), t = $("ft").value, s = $("fs").value;
+  const list = docs.filter(d => (!t || d.tipo===t) && (!s || d.status===s) &&
+    (!q || [label(d), d.assunto, d.destinatario, d.remetente].join(" ").toLowerCase().includes(q)));
+  $("rows").innerHTML = list.map(d => `<tr data-id="${d.id}">
+    <td class="num">${label(d)}</td><td>${fmt(d.data_doc)}</td>
+    <td>${esc(d.assunto)}</td><td>${esc(d.destinatario)||"—"}</td>
+    <td class="${atrasado(d)?"late":""}">${fmt(d.prazo)}${atrasado(d)?" (atrasado)":""}</td>
+    <td><span class="tag ${d.status}">${d.status}</span></td></tr>`).join("");
+  $("empty").classList.toggle("hide", list.length>0);
+  $("sum").innerHTML = `<span><b>${docs.length}</b> documentos</span><span><b>${docs.filter(d=>d.status==="Pendente").length}</b> pendentes</span><span class="${docs.some(atrasado)?"late":""}"><b>${docs.filter(atrasado).length}</b> com prazo vencido</span>`;
+}
+["q","ft","fs"].forEach(id => $(id).oninput = render);
+$("rows").onclick = e => { const tr = e.target.closest("tr"); if(tr) openForm(docs.find(d => d.id===tr.dataset.id)); };
+
+async function proximo(){
+  const ano = new Date($("f_data").value || hoje()).getFullYear();
+  const { data } = await sb.from("documentos").select("numero").eq("tipo",$("f_tipo").value).eq("ano",ano).order("numero",{ascending:false}).limit(1);
+  $("f_num").value = (data?.[0]?.numero ?? 0) + 1;
+}
+function openForm(d){
+  editing = d || null;
+  $("dt").textContent = d ? label(d) : "Novo documento";
+  $("del").classList.toggle("hide", !d); $("fmsg").textContent = "";
+  $("f_tipo").value = d?.tipo || TIPOS[0]; $("f_status").value = d?.status || STATUS[0];
+  $("f_data").value = d?.data_doc || hoje(); $("f_ass").value = d?.assunto || "";
+  $("f_rem").value = d?.remetente || ""; $("f_dest").value = d?.destinatario || "";
+  $("f_prazo").value = d?.prazo || ""; $("f_link").value = d?.link || ""; $("f_obs").value = d?.observacoes || "";
+  if(d) $("f_num").value = d.numero; else proximo();
+  $("dlg").showModal();
+}
+$("new").onclick = () => openForm();
+$("f_tipo").onchange = $("f_data").onchange = () => { if(!editing) proximo(); };
+$("cancel").onclick = () => $("dlg").close();
+$("save").onclick = async () => {
+  const ano = new Date($("f_data").value).getFullYear();
+  const row = { tipo:$("f_tipo").value, numero:+$("f_num").value, ano, data_doc:$("f_data").value,
+    assunto:$("f_ass").value.trim(), remetente:$("f_rem").value, destinatario:$("f_dest").value,
+    status:$("f_status").value, prazo:$("f_prazo").value || null, link:$("f_link").value || null, observacoes:$("f_obs").value };
+  if(!row.assunto || !row.data_doc){ $("fmsg").textContent = "Preencha a data e o assunto."; return; }
+  const { error } = editing ? await sb.from("documentos").update(row).eq("id",editing.id) : await sb.from("documentos").insert(row);
+  if(error){ $("fmsg").textContent = error.code==="23505" ? "Já existe um documento com esse tipo, número e ano." : "Erro ao salvar. Tente novamente."; return; }
+  $("dlg").close(); load();
+};
+$("del").onclick = async () => {
+  if(!confirm("Excluir este documento? Essa ação não pode ser desfeita.")) return;
+  await sb.from("documentos").delete().eq("id",editing.id); $("dlg").close(); load();
+};
+init();
+</script>
+</body>
+</html>
