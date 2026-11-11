@@ -7,12 +7,12 @@
 <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600&family=Source+Serif+4:wght@600&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#f2f4f6;--sf:#fff;--ink:#16212b;--mut:#5d6b78;--line:#d9dfe5;--ac:#1f4e5f;--acx:#fff;--red:#b4452c;--grn:#2f6b4f;--amb:#8a6411}
-@media (prefers-color-scheme:dark){:root{--bg:#10171d;--sf:#18222b;--ink:#e8edf1;--mut:#92a0ac;--line:#2c3a46;--ac:#6fb3c8;--acx:#10171d;--red:#e57a62;--grn:#6fc29b;--amb:#d9b45a}}
+[data-theme="dark"]{--bg:#10171d;--sf:#18222b;--ink:#e8edf1;--mut:#92a0ac;--line:#2c3a46;--ac:#6fb3c8;--acx:#10171d;--red:#e57a62;--grn:#6fc29b;--amb:#d9b45a}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 "Public Sans",system-ui,sans-serif}
 h1,h2{font-family:"Source Serif 4",Georgia,serif;margin:0}
 .wrap{max-width:1100px;margin:0 auto;padding:20px 16px 48px}
-header{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:20px}
+header{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px;margin-bottom:20px}
 button,input,select,textarea{font:inherit;color:inherit}
 .btn{background:var(--ac);color:var(--acx);border:0;border-radius:6px;padding:9px 16px;font-weight:600;cursor:pointer}
 .btn.sec{background:transparent;color:var(--ink);border:1px solid var(--line)}
@@ -43,11 +43,12 @@ dialog::backdrop{background:rgba(0,0,0,.45)}
 .msg{color:var(--red);font-size:14px;min-height:20px}
 .hide{display:none!important}
 @media(max-width:600px){.filters,.grid{grid-template-columns:1fr}}
+.sw{display:flex;gap:8px;flex-wrap:wrap}.sw button{width:30px;height:30px;border-radius:50%;border:2px solid var(--line);cursor:pointer}.sw button[aria-pressed=true]{outline:2px solid var(--ink);outline-offset:2px}.hint{font-size:13px;margin-top:4px}.hint a{color:var(--ac)}.hbtns{display:flex;gap:8px;flex-wrap:wrap}
 </style>
 </head>
 <body>
 <div id="login" class="login hide">
-  <h1>Controle de Documentos</h1>
+  <h1 id="lt">Controle de Documentos</h1>
   <div><label for="em">E-mail</label><input id="em" type="email" autocomplete="username"></div>
   <div><label for="pw">Senha</label><input id="pw" type="password" autocomplete="current-password"></div>
   <p class="msg" id="lmsg"></p>
@@ -56,8 +57,8 @@ dialog::backdrop{background:rgba(0,0,0,.45)}
 
 <div id="app" class="wrap hide">
   <header>
-    <h1>Controle de Documentos</h1>
-    <div><button class="btn" id="new">Novo documento</button> <button class="btn sec" id="out">Sair</button></div>
+    <h1 id="title">Controle de Documentos</h1>
+    <div class="hbtns"><button class="btn" id="new">Novo documento</button><button class="btn sec" id="xls">Excel</button><button class="btn sec" id="pdf">PDF</button><button class="btn sec" id="cfg">Personalizar</button><button class="btn sec" id="out">Sair</button></div>
   </header>
   <div class="filters">
     <input id="q" placeholder="Buscar por assunto, número ou destinatário" aria-label="Buscar">
@@ -82,7 +83,7 @@ dialog::backdrop{background:rgba(0,0,0,.45)}
     <div><label for="f_rem">Remetente</label><input id="f_rem"></div>
     <div><label for="f_dest">Destinatário</label><input id="f_dest"></div>
     <div><label for="f_prazo">Prazo de resposta</label><input id="f_prazo" type="date"></div>
-    <div><label for="f_link">Link do PDF (Drive, etc.)</label><input id="f_link" type="url" placeholder="https://"></div>
+    <div><label for="f_file">Anexar PDF (até 10 MB)</label><input id="f_file" type="file" accept="application/pdf"><div id="curfile" class="hint"></div></div>
     <div class="full"><label for="f_obs">Observações</label><textarea id="f_obs" rows="3"></textarea></div>
   </div>
   <p class="msg" id="fmsg"></p>
@@ -92,7 +93,31 @@ dialog::backdrop{background:rgba(0,0,0,.45)}
   </div>
 </dialog>
 
+<dialog id="pwd">
+  <h2>Crie sua senha</h2>
+  <p>Defina uma senha só sua para continuar.</p>
+  <div class="grid">
+    <div class="full"><label for="p1">Nova senha (mínimo de 8 caracteres)</label><input id="p1" type="password" autocomplete="new-password"></div>
+    <div class="full"><label for="p2">Repita a nova senha</label><input id="p2" type="password" autocomplete="new-password"></div>
+  </div>
+  <p class="msg" id="pmsg"></p>
+  <div class="row"><span></span><span><button class="btn sec" id="pcancel">Cancelar</button> <button class="btn" id="psave">Salvar nova senha</button></span></div>
+</dialog>
+<dialog id="cfgd">
+  <h2>Personalizar</h2>
+  <div class="grid">
+    <div class="full"><label for="c_nome">Nome do sistema</label><input id="c_nome" maxlength="40" placeholder="Controle de Documentos"></div>
+    <div class="full"><label>Cor de destaque</label><div class="sw" id="sw"></div></div>
+    <div><label for="c_cor">Outra cor</label><input id="c_cor" type="color" style="height:38px;padding:2px"></div>
+    <div><label for="c_modo">Tema</label><select id="c_modo"><option value="auto">Automático</option><option value="light">Claro</option><option value="dark">Escuro</option></select></div>
+  </div>
+  <div class="row"><button class="btn sec" id="c_pw">Alterar senha</button><span><button class="btn sec" id="c_x">Cancelar</button> <button class="btn" id="c_ok">Salvar</button></span></div>
+</dialog>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <script>
 // 1) Cole aqui a URL e a chave "anon" do seu projeto Supabase (Project Settings > API)
 const SUPABASE_URL = "https://asxcpzxkwhpkvcufpczg.supabase.co";
@@ -102,7 +127,7 @@ const TIPOS = ["Ofício","Memorando","Parecer","Despacho","Notificação","Reque
 const STATUS = ["Rascunho","Enviado","Pendente","Respondido","Arquivado"];
 const $ = id => document.getElementById(id);
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-let docs = [], editing = null;
+let docs = [], visible = [], editing = null, uid = null, tema = {}, forced = false;
 
 const fill = (el, arr) => arr.forEach(v => el.add(new Option(v, v)));
 fill($("ft"), TIPOS); fill($("fs"), STATUS); fill($("f_tipo"), TIPOS); fill($("f_status"), STATUS);
@@ -117,7 +142,13 @@ async function init(){
   const { data:{ session } } = await sb.auth.getSession();
   $("login").classList.toggle("hide", !!session);
   $("app").classList.toggle("hide", !session);
-  if(session) load();
+  if(session){
+    uid = session.user.id;
+    const m = session.user.user_metadata || {};
+    if(m.tema){ tema = m.tema; apply(tema); }
+    if(!m.senha_trocada) openPwd(true);
+    load();
+  }
 }
 $("enter").onclick = async () => {
   const { error } = await sb.auth.signInWithPassword({ email:$("em").value, password:$("pw").value });
@@ -132,11 +163,11 @@ async function load(){
 }
 function render(){
   const q = $("q").value.toLowerCase(), t = $("ft").value, s = $("fs").value;
-  const list = docs.filter(d => (!t || d.tipo===t) && (!s || d.status===s) &&
+  const list = visible = docs.filter(d => (!t || d.tipo===t) && (!s || d.status===s) &&
     (!q || [label(d), d.assunto, d.destinatario, d.remetente].join(" ").toLowerCase().includes(q)));
   $("rows").innerHTML = list.map(d => `<tr data-id="${d.id}">
     <td class="num">${label(d)}</td><td>${fmt(d.data_doc)}</td>
-    <td>${esc(d.assunto)}</td><td>${esc(d.destinatario)||"—"}</td>
+    <td>${esc(d.assunto)}${d.arquivo_path?' <span class="tag Enviado">PDF</span>':""}</td><td>${esc(d.destinatario)||"—"}</td>
     <td class="${atrasado(d)?"late":""}">${fmt(d.prazo)}${atrasado(d)?" (atrasado)":""}</td>
     <td><span class="tag ${d.status}">${d.status}</span></td></tr>`).join("");
   $("empty").classList.toggle("hide", list.length>0);
@@ -157,7 +188,9 @@ function openForm(d){
   $("f_tipo").value = d?.tipo || TIPOS[0]; $("f_status").value = d?.status || STATUS[0];
   $("f_data").value = d?.data_doc || hoje(); $("f_ass").value = d?.assunto || "";
   $("f_rem").value = d?.remetente || ""; $("f_dest").value = d?.destinatario || "";
-  $("f_prazo").value = d?.prazo || ""; $("f_link").value = d?.link || ""; $("f_obs").value = d?.observacoes || "";
+  $("f_prazo").value = d?.prazo || ""; $("f_file").value = "";
+  $("curfile").innerHTML = d?.arquivo_path ? '<a href="#" id="seefile">Abrir PDF anexado</a>' : "";
+  if(d?.arquivo_path) $("seefile").onclick = ev => { ev.preventDefault(); verPdf(d.arquivo_path); }; $("f_obs").value = d?.observacoes || "";
   if(d) $("f_num").value = d.numero; else proximo();
   $("dlg").showModal();
 }
@@ -168,15 +201,90 @@ $("save").onclick = async () => {
   const ano = new Date($("f_data").value).getFullYear();
   const row = { tipo:$("f_tipo").value, numero:+$("f_num").value, ano, data_doc:$("f_data").value,
     assunto:$("f_ass").value.trim(), remetente:$("f_rem").value, destinatario:$("f_dest").value,
-    status:$("f_status").value, prazo:$("f_prazo").value || null, link:$("f_link").value || null, observacoes:$("f_obs").value };
+    status:$("f_status").value, prazo:$("f_prazo").value || null, observacoes:$("f_obs").value };
   if(!row.assunto || !row.data_doc){ $("fmsg").textContent = "Preencha a data e o assunto."; return; }
+  const f = $("f_file").files[0], antigo = editing?.arquivo_path;
+  if(f){
+    if(f.type!=="application/pdf" || f.size>10*1024*1024){ $("fmsg").textContent = "Anexe um arquivo PDF de até 10 MB."; return; }
+    row.arquivo_path = `${uid}/${crypto.randomUUID()}.pdf`;
+    const up = await sb.storage.from("anexos").upload(row.arquivo_path, f, { contentType:"application/pdf" });
+    if(up.error){ $("fmsg").textContent = "Não foi possível enviar o PDF. Tente novamente."; return; }
+  }
   const { error } = editing ? await sb.from("documentos").update(row).eq("id",editing.id) : await sb.from("documentos").insert(row);
   if(error){ $("fmsg").textContent = error.code==="23505" ? "Já existe um documento com esse tipo, número e ano." : "Erro ao salvar. Tente novamente."; return; }
+  if(f && antigo) sb.storage.from("anexos").remove([antigo]);
   $("dlg").close(); load();
 };
 $("del").onclick = async () => {
   if(!confirm("Excluir este documento? Essa ação não pode ser desfeita.")) return;
+  if(editing.arquivo_path) await sb.storage.from("anexos").remove([editing.arquivo_path]);
   await sb.from("documentos").delete().eq("id",editing.id); $("dlg").close(); load();
+};
+
+async function verPdf(path){
+  const w = window.open("", "_blank");
+  const { data, error } = await sb.storage.from("anexos").createSignedUrl(path, 120);
+  if(error){ w.close(); alert("Não foi possível abrir o PDF."); return; }
+  w.location = data.signedUrl;
+}
+
+// Exportar (respeita a busca e os filtros na tela)
+$("xls").onclick = () => {
+  const ws = XLSX.utils.json_to_sheet(visible.map(d => ({ "Número":label(d), "Data":fmt(d.data_doc), "Assunto":d.assunto,
+    "Remetente":d.remetente||"", "Destinatário":d.destinatario||"", "Prazo":fmt(d.prazo), "Situação":d.status, "Observações":d.observacoes||"" })));
+  ws["!cols"] = [{wch:20},{wch:12},{wch:50},{wch:25},{wch:25},{wch:12},{wch:14},{wch:40}];
+  const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Documentos");
+  XLSX.writeFile(wb, "documentos-" + hoje() + ".xlsx");
+};
+$("pdf").onclick = () => {
+  const p = new window.jspdf.jsPDF({ orientation:"landscape" });
+  p.setFontSize(14); p.text($("title").textContent, 14, 14);
+  p.setFontSize(9); p.text("Gerado em " + fmt(hoje()) + " - " + visible.length + " documentos", 14, 20);
+  p.autoTable({ startY:24, styles:{ fontSize:8 }, head:[["Número","Data","Assunto","Remetente","Destinatário","Prazo","Situação"]],
+    body: visible.map(d => [label(d), fmt(d.data_doc), d.assunto, d.remetente||"-", d.destinatario||"-", fmt(d.prazo), d.status]) });
+  p.save("documentos-" + hoje() + ".pdf");
+};
+
+// Aparência
+const SWATCHES = ["#1f4e5f","#2f6b4f","#3b5bdb","#7048a8","#b4452c","#444b54"];
+let draft = {};
+const lum = h => { const n = parseInt(h.slice(1),16); return (0.299*(n>>16) + 0.587*((n>>8)&255) + 0.114*(n&255))/255; };
+function apply(t){
+  const r = document.documentElement, mode = t.modo || "auto";
+  r.dataset.theme = mode==="auto" ? (matchMedia("(prefers-color-scheme:dark)").matches ? "dark" : "light") : mode;
+  if(t.cor){ r.style.setProperty("--ac", t.cor); r.style.setProperty("--acx", lum(t.cor)>.6 ? "#16212b" : "#fff"); }
+  else { r.style.removeProperty("--ac"); r.style.removeProperty("--acx"); }
+  const nome = t.nome || "Controle de Documentos";
+  $("title").textContent = $("lt").textContent = document.title = nome;
+}
+try{ tema = JSON.parse(localStorage.getItem("tema")||"{}"); }catch(e){ tema = {}; }
+apply(tema);
+matchMedia("(prefers-color-scheme:dark)").addEventListener("change", () => apply(tema));
+function drawSw(){ $("sw").innerHTML = SWATCHES.map(c => `<button type="button" style="background:${c}" data-c="${c}" aria-label="Cor ${c}" aria-pressed="${draft.cor===c}"></button>`).join(""); }
+$("cfg").onclick = () => { draft = {...tema}; $("c_nome").value = tema.nome||""; $("c_modo").value = tema.modo||"auto"; $("c_cor").value = tema.cor||"#1f4e5f"; drawSw(); $("cfgd").showModal(); };
+$("sw").onclick = e => { const c = e.target.dataset.c; if(c){ draft.cor = c; $("c_cor").value = c; drawSw(); apply(draft); } };
+$("c_cor").oninput = e => { draft.cor = e.target.value; drawSw(); apply(draft); };
+$("c_modo").onchange = e => { draft.modo = e.target.value; apply(draft); };
+$("c_nome").oninput = e => { draft.nome = e.target.value.trim(); apply(draft); };
+$("cfgd").onclose = () => apply(tema);
+$("c_x").onclick = () => $("cfgd").close();
+$("c_ok").onclick = async () => {
+  tema = {...draft}; try{ localStorage.setItem("tema", JSON.stringify(tema)); }catch(e){}
+  await sb.auth.updateUser({ data:{ tema } }); $("cfgd").close();
+};
+
+// Senha
+function openPwd(f){ forced = f; $("pcancel").classList.toggle("hide", f); $("p1").value = $("p2").value = ""; $("pmsg").textContent = ""; $("pwd").showModal(); }
+$("pwd").addEventListener("cancel", e => { if(forced) e.preventDefault(); });
+$("pcancel").onclick = () => $("pwd").close();
+$("c_pw").onclick = () => { $("cfgd").close(); openPwd(false); };
+$("psave").onclick = async () => {
+  const a = $("p1").value;
+  if(a.length < 8){ $("pmsg").textContent = "A senha precisa ter pelo menos 8 caracteres."; return; }
+  if(a !== $("p2").value){ $("pmsg").textContent = "As duas senhas não são iguais."; return; }
+  const { error } = await sb.auth.updateUser({ password:a, data:{ senha_trocada:true } });
+  if(error){ $("pmsg").textContent = /different|same/i.test(error.message) ? "A nova senha precisa ser diferente da provisória." : "Não foi possível salvar. Tente novamente."; return; }
+  forced = false; $("pwd").close();
 };
 init();
 </script>
